@@ -1,0 +1,141 @@
+#!/bin/bash
+
+# ##########################################################################
+# Variables (can be adapted)
+# ##########################################################################
+# set the default values for Ports, Desktop Environment," " Remote Access and Kali packages
+# You can adapt these ports to your needs
+# ##########################################################################
+
+XRDP_PORT=13389
+XVNC_DISPLAY=8
+XVNC_PORT=590${XVNC_DISPLAY}
+XSSH_PORT=20022
+
+# ##########################################################################
+# Variables (For menu choice - should not be changed)
+# ##########################################################################
+# The following variables contain the default and the possible choices
+# for Desktop Environment, Remote Access, Kali Packages and Network.
+# You can chose them from the menu
+# ##########################################################################
+
+
+XDESKTOP_ENVIRONMENT=xfce
+XDESKTOP_CHOICE=("xfce" "mate" "kde" "e17" "gnome" "i3" "i3-gaps" "live" "lxde")
+
+XREMOTE_ACCESS=vnc
+XREMOTE_CHOICE=("vnc" "rdp" "x2go")
+
+XKALI_PKG=default
+XKALI_CHOICE=("arm" "core" "default" "everything" "firmware" "headless" "labs" "large" "nethunter")
+
+XNETWORK=default
+XNET_CHOICE=("bridge" "host")
+
+# ##########################################################################
+# menu function
+# ##########################################################################
+# The menu function takes an array as parameter, e.g. ("Color" "blue" "red")
+# it will then prompt "Please select a xxx" and replace xxx with the first 
+# element of the array (in the above example "Please select a color")
+# It then shows numbers starting from 1 and options you may chose
+# ( 1 - blue, 2 - red in the example) and return the user's choice
+# in the variable $choice
+# ##########################################################################
+
+
+menu() {
+        choice=0
+
+        while true; do
+                XCHOICE=("$@")
+                echo -e "\nplease select a $1"
+                for (( i=1; i < ${#XCHOICE[@]} ; i++)) ; do
+                        echo "$i - ${XCHOICE[$i]}"
+                done
+                read -n 1 -p "Your choice -> " choice
+                echo -e 
+                if (($choice >=1 && $choice < ${#XCHOICE[@]})); then  break ; fi
+        done
+}
+
+# ##########################################################################
+# Script starting point
+# ##########################################################################
+
+echo "This script will create a Kali Linux docker container for you"
+
+# First we ask the user what he/she wants to install
+# we call the menu function with each of the above variables
+
+menu  "Desktop Environment" ${XDESKTOP_CHOICE[@]}
+XDESKTOP_ENVIRONMENT=${XDESKTOP_CHOICE[$choice-1]}
+
+menu  "Remote Access Option" ${XREMOTE_CHOICE[@]}
+XREMOTE_ACCESS=${XREMOTE_CHOICE[$choice-1]}
+
+menu  "Kali Package" ${XKALI_CHOICE[@]}
+XKALI_PKG=${XKALI_CHOICE[$choice-1]}
+
+menu  "Network" ${XNET_CHOICE[@]}
+XNETWORK=${XNET_CHOICE[$choice-1]}
+
+# After the menu choices we clear the screen and
+# show a summary of the Installation choices and ask
+# the user to press Enter
+
+clear
+echo -e "You selected:\n"
+echo "Desktop environment: $XDESKTOP_ENVIRONMENT"
+echo "Remote Access:       $XREMOTE_ACCESS"
+echo "Kali packages:       $XKALI_PKG"
+echo -e "Network:             $XNETWORK \n"
+echo "Hit enter to start building the container"
+read
+
+# ##########################################
+# build the image
+# ##########################################
+# Now we call docker build and pass on all
+# the choices as build-arg to the Dockerfile
+# where they will be interpreted
+# ##########################################
+
+docker build \
+        -t onemarcfifty/kali-linux \
+        --build-arg DESKTOP_ENVIRONMENT=$XDESKTOP_ENVIRONMENT \
+        --build-arg REMOTE_ACCESS=$XREMOTE_ACCESS \
+        --build-arg KALI_PACKAGE=$XKALI_PKG \
+        --build-arg RDP_PORT=$XRDP_PORT \
+        --build-arg VNC_PORT=$XVNC_PORT \
+        --build-arg VNC_DISPLAY=$XVNC_DISPLAY \
+        --build-arg SSH_PORT=$XSSH_PORT \
+        .
+
+# ##########################################
+# create the container
+# ##########################################
+# Now we call docker create and pass on all
+# the choices for network and ports that the
+# user has made in the menu
+# ##########################################
+
+docker create   --name kali-linux \
+                --network $XNETWORK \
+                -p $XRDP_PORT:$XRDP_PORT \
+                -p $XVNC_PORT:$XVNC_PORT \
+                -p $XSSH_PORT:$XSSH_PORT \
+                -t \
+                -v kaliuser_data:/home/kaliuser \
+                onemarcfifty/kali-linux
+
+# ##########################################
+# start the container
+# ##########################################
+# Now we start the container
+# ##########################################
+
+echo "Your image and container have been built. It will now be started"
+docker start kali-linux
+echo "Use username kaliuser and password onemarcfifty"
