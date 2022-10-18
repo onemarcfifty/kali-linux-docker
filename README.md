@@ -17,7 +17,13 @@ then cd into that directory and run
     sudo ./build
 
 The build script then asks you for all the options and builds the image, creates the container
-and starts it.
+and starts it. So in a nutshell, the complete command sequence in a linux shell to install on a Debian or Ubuntu Linux would be:
+
+    apt update
+    apt install git
+    git clone https://github.com/onemarcfifty/kali-linux-docker.git
+    cd kali-linux-docker
+    sudo ./build
 
 ## how to use
 
