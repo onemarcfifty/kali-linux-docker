@@ -65,7 +65,7 @@ ENV KALI_PKG=kali-linux-${KALI_PACKAGE}
 
 RUN apt update -q --fix-missing  
 RUN apt upgrade -y
-RUN apt -y install --no-install-recommends sudo wget curl dbus-x11 xinit ${DESKTOP_PKG}
+RUN apt -y install --no-install-recommends sudo wget curl dbus-x11 xinit openssh-server ${DESKTOP_PKG}
 
 # #####################################################
 # create the start bash shell file
