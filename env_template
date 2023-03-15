@@ -1,0 +1,50 @@
+# RDP port
+XRDP_PORT=13389
+
+# VNC ports
+XVNC_DISPLAY=8
+XVNC_PORT=5908
+
+# SSH port
+XSSH_PORT=20022
+
+# Container desktop environment
+# Options: "xfce" "mate" "kde" "e17" "gnome" "i3" "i3-gaps" "live" "lxde"
+XDESKTOP_ENVIRONMENT="xfce"
+
+# Remote access metohod for desktop
+# Options: "vnc" "rdp" "x2go"
+# Once rdp is up, it may take a moment to load
+# Note: Only xfce works with rdp right now
+XREMOTE_ACCESS="rdp"
+
+# Kali packages
+# Options: "arm" "core" "default" "everything" "firmware" "headless" "labs" "large" "nethunter"
+XKALI_PKG="core"
+
+# Network configuration
+# Options: "bridge" "host"
+XNETWORK="bridge"
+
+# Target build architecture
+# Options: "amd64" "arm64"
+# Other untested options: https://docs.docker.com/build/building/multi-platform/
+XBUILD_PLATFORM="amd64"
+
+# Name for local custom Docker image
+DOCKERIMG="custom/kali-linux"
+
+# Name for Docker container generated from custom image
+CONTAINER="kali-linux"
+
+# Host directory to mount to container
+HOSTDIR="/home/user"
+
+# Container directory to mount host directory
+CONTAINERDIR="/opt"
+
+# Username for container user
+USERNAME="user"
+
+# Password for container user
+PASSWORD="password123"
