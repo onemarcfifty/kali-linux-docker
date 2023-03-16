@@ -1,42 +1,53 @@
 #!/bin/bash
 
+# Import configuration variables from env file
+
+export $(grep -v '^#' env | xargs)
+
 # ##########################################################################
-# Variables (can be adapted)
+# Remote access variables (can be adapted)
 # ##########################################################################
-# set the default values for Ports, Desktop Environment," " Remote Access and Kali packages
-# You can adapt these ports to your needs
+# set the default values for remote access ports
 # ##########################################################################
 
-XRDP_PORT=13389
-XVNC_DISPLAY=8
-XVNC_PORT=590${XVNC_DISPLAY}
-XSSH_PORT=20022
+if [ -z $XRDP_PORT ];
+then
+    XRDP_PORT=13389
+fi
+
+if [ -z $XVNC_DISPLAY ];
+then
+    XVNC_DISPLAY=8
+fi
+
+if [ -z $XVNC_PORT ];
+then
+    XVNC_PORT=590$XVNC_DISPLAY
+fi
+
+if [ -z $XSSH_PORT ];
+then
+    XSSH_PORT=20022
+fi
 
 # ##########################################################################
 # Variables (For menu choice - should not be changed)
 # ##########################################################################
 # The following variables contain the default and the possible choices
-# for Desktop Environment, Remote Access, Kali Packages and Network.
-# You can chose them from the menu
+# for Desktop Environment, Remote Access, Kali Packages, Network, and build
+# architecture
 # ##########################################################################
 
-
-XDESKTOP_ENVIRONMENT=xfce
 XDESKTOP_CHOICE=("xfce" "mate" "kde" "e17" "gnome" "i3" "i3-gaps" "live" "lxde")
-
-XREMOTE_ACCESS=vnc
 XREMOTE_CHOICE=("vnc" "rdp" "x2go")
-
-XKALI_PKG=default
 XKALI_CHOICE=("arm" "core" "default" "everything" "firmware" "headless" "labs" "large" "nethunter")
-
-XNETWORK=default
 XNET_CHOICE=("bridge" "host")
+XBUILD_CHOICE=("amd64" "arm64")
 
 # ##########################################################################
 # menu function
 # ##########################################################################
-# The menu function takes an array as parameter, e.g. ("Color" "blue" "red")
+# Takes an array as parameter, e.g. ("Color" "blue" "red")
 # it will then prompt "Please select a xxx" and replace xxx with the first 
 # element of the array (in the above example "Please select a color")
 # It then shows numbers starting from 1 and options you may chose
@@ -50,7 +61,7 @@ menu() {
 
         while true; do
                 XCHOICE=("$@")
-                echo -e "\nplease select a $1"
+                echo -e "\nPlease select a $1"
                 for (( i=1; i < ${#XCHOICE[@]} ; i++)) ; do
                         echo "$i - ${XCHOICE[$i]}"
                 done
@@ -64,46 +75,130 @@ menu() {
 # Script starting point
 # ##########################################################################
 
-echo "This script will create a Kali Linux docker container for you"
+echo "This script will create a custom Kali Linux Docker container for you"
 
-# First we ask the user what he/she wants to install
-# we call the menu function with each of the above variables
+# ##########################################
+# ask the user what he/she wants to install 
+# we call the menu function with each of the 
+# above variables if not specified in .env
+# ##########################################
 
-menu  "Desktop Environment" ${XDESKTOP_CHOICE[@]}
-XDESKTOP_ENVIRONMENT=${XDESKTOP_CHOICE[$choice-1]}
+if [ -z $XDESKTOP_ENVIRONMENT ];
+then
+    menu  "Desktop Environment (only xfce for xrdp right now)" ${XDESKTOP_CHOICE[@]}
+    XDESKTOP_ENVIRONMENT=${XDESKTOP_CHOICE[$choice-1]}
+fi
 
-menu  "Remote Access Option" ${XREMOTE_CHOICE[@]}
-XREMOTE_ACCESS=${XREMOTE_CHOICE[$choice-1]}
+if [ -z $XREMOTE_ACCESS ];
+then
+    menu  "Remote Access Option" ${XREMOTE_CHOICE[@]}
+    XREMOTE_ACCESS=${XREMOTE_CHOICE[$choice-1]}
+fi
 
-menu  "Kali Package" ${XKALI_CHOICE[@]}
-XKALI_PKG=${XKALI_CHOICE[$choice-1]}
+if [ -z $XKALI_PKG ];
+then
+    menu  "Kali Package" ${XKALI_CHOICE[@]}
+    XKALI_PKG=${XKALI_CHOICE[$choice-1]}
+fi
 
-menu  "Network" ${XNET_CHOICE[@]}
-XNETWORK=${XNET_CHOICE[$choice-1]}
+if [ -z $XNETWORK ];
+then
+    menu  "Network" ${XNET_CHOICE[@]}
+    XNETWORK=${XNET_CHOICE[$choice-1]}
+fi
 
-# After the menu choices we clear the screen and
-# show a summary of the Installation choices and ask
-# the user to press Enter
+if [ -z $XBUILD_PLATFORM ];
+then
+    menu "Build Architecture" ${XBUILD_CHOICE[@]}
+    XBUILD_PLATFORM=${XBUILD_CHOICE[$choice-1]}
+fi
+
+# ##########################################
+# additional user config input:
+# - Name for local custom Kali Docker image
+# - Name for created container
+# - Dir of host machine to mount
+# - Dir to mount in container
+# - Username for container user
+# - Password for conatiner user (echo off)
+# ##########################################
+
+if [ -z $DOCKERIMG ];
+then
+    printf "Enter desired local Docker image name (e.g. custom/kali-linux): "
+    read DOCKERIMG
+    printf "\n"
+fi
+
+if [ -z $CONTAINER ];
+then
+    printf "Enter desired local Docker container name (e.g. kali-linux): "
+    read CONTAINER
+    printf "\n"
+fi
+
+if [ -z $HOSTDIR ];
+then
+    printf "Enter host directory to mount: "
+    read HOSTDIR
+    printf "\n"
+fi
+
+if [ -z $CONTAINERDIR ];
+then
+    printf "Enter container directory to mount to: "
+    read CONTAINERDIR
+    printf "\n"
+fi
+
+if [ -z $USERNAME ];
+then
+    printf "Enter desired username: "
+    read USERNAME
+    printf "\n"
+fi
+
+if [ -z $PASSWORD ];
+then
+stty -echo
+    printf "Enter desired password (password will show in Docker output): "
+    read PASSWORD
+    stty echo
+    printf "\n"
+fi
+
+# ##########################################
+# show a summary of the Installation choices 
+# and confirm choices
+# ##########################################
 
 clear
-echo -e "You selected:\n"
-echo "Desktop environment: $XDESKTOP_ENVIRONMENT"
-echo "Remote Access:       $XREMOTE_ACCESS"
-echo "Kali packages:       $XKALI_PKG"
-echo -e "Network:             $XNETWORK \n"
-echo "Hit enter to start building the container"
+echo -e "Configuration:\n"
+echo "Desktop environment:    $XDESKTOP_ENVIRONMENT"
+echo "Remote Access:          $XREMOTE_ACCESS"
+echo "Kali packages:          $XKALI_PKG"
+echo -e "Network:                $XNETWORK"
+echo -e "Build platform:         $XBUILD_PLATFORM"
+echo -e "Image name:             $DOCKERIMG"
+echo -e "Conatiner name:         $CONTAINER"
+echo -e "Host dir mount:         $HOSTDIR"
+echo -e "Container dir mount:    $CONTAINERDIR"
+echo -e "Username:               $USERNAME"
+echo -e "Password                [redacted]"
+
+printf "\nHit enter to start building the container"
 read
 
 # ##########################################
 # build the image
 # ##########################################
-# Now we call docker build and pass on all
+# call docker build and pass on all
 # the choices as build-arg to the Dockerfile
 # where they will be interpreted
 # ##########################################
 
-docker build \
-        -t onemarcfifty/kali-linux \
+docker image build --platform linux/$XBUILD_PLATFORM \
+        -t $DOCKERIMG \
         --build-arg DESKTOP_ENVIRONMENT=$XDESKTOP_ENVIRONMENT \
         --build-arg REMOTE_ACCESS=$XREMOTE_ACCESS \
         --build-arg KALI_PACKAGE=$XKALI_PKG \
@@ -111,31 +206,38 @@ docker build \
         --build-arg VNC_PORT=$XVNC_PORT \
         --build-arg VNC_DISPLAY=$XVNC_DISPLAY \
         --build-arg SSH_PORT=$XSSH_PORT \
+        --build-arg BUILD_ENV=$XBUILD_PLATFORM \
+        --build-arg HOSTDIR \
+        --build-arg CONTAINERDIR \
+        --build-arg UNAME=$USERNAME \
+        --build-arg UPASS=$PASSWORD \
         .
 
 # ##########################################
 # create the container
 # ##########################################
-# Now we call docker create and pass on all
+# call docker create and pass on all
 # the choices for network and ports that the
 # user has made in the menu
 # ##########################################
 
-docker create   --name kali-linux \
+docker create   --name $CONTAINER \
                 --network $XNETWORK \
+                --platform linux/$XBUILD_PLATFORM \
                 -p $XRDP_PORT:$XRDP_PORT \
                 -p $XVNC_PORT:$XVNC_PORT \
                 -p $XSSH_PORT:$XSSH_PORT \
                 -t \
-                -v kaliuser_data:/home/kaliuser \
-                onemarcfifty/kali-linux
+                -v $HOSTDIR:$CONTAINERDIR \
+                $DOCKERIMG
 
 # ##########################################
 # start the container
 # ##########################################
-# Now we start the container
-# ##########################################
 
-echo "Your image and container have been built. It will now be started"
-docker start kali-linux
-echo "Use username kaliuser and password onemarcfifty"
+echo "Image ($DOCKERIMG) and container ($CONTAINER) build successful. $CONTAINER will now start."
+docker start $CONTAINER
+
+# Clear environment variables from env file
+
+unset $(grep -v '^#' env | sed -E 's/(.*)=.*/\1/' | xargs)

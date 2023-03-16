@@ -5,16 +5,24 @@
 # This Dockerfile will build a Kali Linux Docker 
 # image with a graphical environment
 #
-# It takes the following build-args:
+# It loads the following variables from the env file:
 # 
-#  - the Desktop environment (DESKTOP_ENVIRONMENT)
-#  - the remote client you want to use (REMOTE_ACCESS)
-#  - the Kali packages to install (KALI_PACKAGE)
-#  - ports to use for VNC, SSH, RDP 
+#  - Ports to use for VNC, SSH, and RDP 
 #    (RDP_PORT, VNC_DISPLAY, VNC_PORT, SSH_PORT)
+#  - Desktop environment(DESKTOP_ENVIRONMENT)
+#  - Remote access software (REMOTE_ACCESS)
+#  - Kali packages to install (KALI_PACKAGE)
+#  - Network configuration  (NETWORK)
+#  - Build platform (BUILD_PLATFORM)
+#  - Local Docker image name (DockerIMG)
+#  - Docker container name (CONTAINER)
+#  - Host directory to mount as volume 
+#  - Container directory for volume mount (HOSTDIR)
+#  - Container username (USERNAME)
+#  - Container user password
 #
 # The start script is called /startkali.sh
-# and it will be built dynamically by the docker build
+# and it will be built dynamically by the Docker build
 # process
 #
 # #####################################################
@@ -28,6 +36,11 @@ ARG SSH_PORT
 ARG RDP_PORT
 ARG VNC_PORT
 ARG VNC_DISPLAY
+ARG BUILD_ENV
+ARG HOSTDIR
+ARG CONTAINERDIR
+ARG UNAME
+ARG UPASS
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -85,17 +98,17 @@ RUN apt -y install --no-install-recommends ${KALI_PKG}
 # create the non-root kali user
 # #####################################################
 
-RUN useradd -m -s /bin/bash -G sudo kaliuser
-RUN echo 'kaliuser:onemarcfifty' | chpasswd
+RUN useradd -m -s /bin/bash -G sudo ${UNAME}
+RUN echo "${UNAME}:${UPASS}" | chpasswd
 
 # #####################################################
 # change the ssh port in /etc/ssh/sshd_config
 # When you use the bridge network, then you would
 # not have to do that. You could rather add a port
 # mapping argument such as -p 2022:22 to the 
-# docker create command. But we might as well
+# Docker create command. But we might as well
 # use the host network and port 22 might be taken
-# on the docker host. Hence we change it 
+# on the Docker host. Hence we change it 
 # here inside the container
 # #####################################################
 
@@ -115,12 +128,21 @@ RUN if [ "xx2go" = "x${REMOTE_ACCESS}" ]  ; \
 # #############################
 # install and configure xrdp
 # #############################
+# currently, xrdp only works
+# with the xfce desktop
+# #############################
 
 RUN if [ "xrdp" = "x${REMOTE_ACCESS}" ] ; \
     then \
-        apt -y install --no-install-recommends xorg xorgxrdp xrdp ; \
-        echo "/etc/init.d/xrdp start" >> /startkali.sh ; \
-        sed -i s/^port=3389/port=${RDP_PORT}/ /etc/xrdp/xrdp.ini ; \
+            apt -y install --no-install-recommends xorg xorgxrdp xrdp ; \
+            echo "/etc/init.d/xrdp start" >> /startkali.sh ; \
+            sed -i s/^port=3389/port=${RDP_PORT}/ /etc/xrdp/xrdp.ini ; \
+            adduser xrdp ssl-cert ; \
+            if [ "xfce" = "${DESKTOP_ENVIRONMENT}" ] ; \
+            then \
+                echo xfce4-session > /home/${UNAME}/.xsession ; \
+                chmod +x /home/${UNAME}/.xsession ; \
+            fi ; \
     fi
 
 # ###########################################################
@@ -129,13 +151,13 @@ RUN if [ "xrdp" = "x${REMOTE_ACCESS}" ] ; \
 # this needs a bit more tweaking than the other protocols
 # we need to set the mandatory security options,
 # the password for the connection, the port to use
-# and also define the kaliuser to be used for the 
+# and also define the ${UNAME} to be used for the 
 # screen VNC_DISPLAY
 # the password seems to be overwritten so I am hard
 # setting it in the /startkali.sh script each time 
 # After running tigervncsession-start, the session will
 # terminate once the user logs out. Therefore
-# we do a sudo -u kaliuser vncserver in an endless loop 
+# we do a sudo -u ${UNAME} vncserver in an endless loop 
 # afterwords. This way we always have a running vnc server
 # ###########################################################
 
@@ -143,16 +165,16 @@ RUN if [ "xvnc" = "x${REMOTE_ACCESS}" ] ; \
     then \
         apt -y install --no-install-recommends tigervnc-standalone-server tigervnc-tools; \
         echo "/usr/libexec/tigervncsession-start :${VNC_DISPLAY} " >> /startkali.sh ; \
-        echo "echo -e 'onemarcfifty' | vncpasswd -f >/home/kaliuser/.vnc/passwd" >> /startkali.sh  ;\
-        echo "while true; do sudo -u kaliuser vncserver -fg -v ; done" >> /startkali.sh ; \
-        echo ":${VNC_DISPLAY}=kaliuser" >>/etc/tigervnc/vncserver.users ;\
+        echo "echo -e '${UPASS}' | vncpasswd -f >/home/${UNAME}/.vnc/passwd" >> /startkali.sh  ;\
+        echo "while true; do sudo -u ${UNAME} vncserver -fg -v ; done" >> /startkali.sh ; \
+        echo ":${VNC_DISPLAY}=${UNAME}" >>/etc/tigervnc/vncserver.users ;\
         echo '$localhost = "no";' >>/etc/tigervnc/vncserver-config-mandatory ;\
         echo '$SecurityTypes = "VncAuth";' >>/etc/tigervnc/vncserver-config-mandatory ;\
-        mkdir -p /home/kaliuser/.vnc ;\
-        chown kaliuser:kaliuser /home/kaliuser/.vnc ;\
-        touch /home/kaliuser/.vnc/passwd ;\
-        chown kaliuser:kaliuser /home/kaliuser/.vnc/passwd ;\
-        chmod 600 /home/kaliuser/.vnc/passwd ;\
+        mkdir -p /home/${UNAME}/.vnc ;\
+        chown ${UNAME}:${UNAME} /home/${UNAME}/.vnc ;\
+        touch /home/${UNAME}/.vnc/passwd ;\
+        chown ${UNAME}:${UNAME} /home/${UNAME}/.vnc/passwd ;\
+        chmod 600 /home/${UNAME}/.vnc/passwd ;\
     fi
 
 # ###########################################################
