@@ -137,6 +137,7 @@ RUN if [ "xx2go" = "x${REMOTE_ACCESS}" ]  ; \
 RUN if [ "xrdp" = "x${REMOTE_ACCESS}" ] ; \
     then \
             apt -y install --no-install-recommends xorg xorgxrdp xrdp ; \
+            echo "rm /var/run/xrdp* >/dev/null 2>&1" >> /startkali.sh ; \
             echo "/etc/init.d/xrdp start" >> /startkali.sh ; \
             sed -i s/^port=3389/port=${RDP_PORT}/ /etc/xrdp/xrdp.ini ; \
             adduser xrdp ssl-cert ; \

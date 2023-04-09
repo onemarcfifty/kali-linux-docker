@@ -68,10 +68,8 @@ You may also want to join [THE ONEMARCFIFTY DISCORD SERVER](https://discord.com/
 ## troubleshooting/tips
 - When using RDP and XFCE, the desktop will take a moment to load the first time (about five seconds or less)
     - If the `Plugin "Power Manager Plugin" unexpectedly left the panel` error shows, choose `Remove`
-- After reboot, run `rm /var/run/xrdp*` and reboot to restore XRDP
 
 ## TODO
 
-- Troubleshooting for remote desktop protocols
 - Power management plugin will not load when using RDP and XFCE 
 - Troubleshoot `Power Manager Plugin` load failure to enable users to disable desktop sleep, screenlock, etc.
