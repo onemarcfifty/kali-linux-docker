@@ -62,14 +62,11 @@ You may also want to join [THE ONEMARCFIFTY DISCORD SERVER](https://discord.com/
 ## known issues
 
 - RDP seems to only work with XFCE desktop
-- Other remote access protocols with various desktop environments also seem to be broken
-- XRDP breaks after reboot
+- Not all combinations of remote access protocols with various desktop environments are working
 
 ## troubleshooting/tips
 - When using RDP and XFCE, the desktop will take a moment to load the first time (about five seconds or less)
-    - If the `Plugin "Power Manager Plugin" unexpectedly left the panel` error shows, choose `Remove`
 
 ## TODO
 
-- Power management plugin will not load when using RDP and XFCE 
-- Troubleshoot `Power Manager Plugin` load failure to enable users to disable desktop sleep, screenlock, etc.
+- Disable desktop sleep, screenlock, etc.

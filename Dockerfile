@@ -79,6 +79,7 @@ ENV KALI_PKG=kali-linux-${KALI_PACKAGE}
 RUN apt update -q --fix-missing  
 RUN apt upgrade -y
 RUN apt -y install --no-install-recommends sudo wget curl dbus-x11 xinit openssh-server ${DESKTOP_PKG}
+RUN apt -y install locales
 RUN sed -i s/^#\ en_US.UTF-8\ UTF-8/en_US.UTF-8\ UTF-8/ /etc/locale.gen
 RUN locale-gen
 
@@ -116,6 +117,16 @@ RUN echo "${UNAME}:${UPASS}" | chpasswd
 
 RUN echo "Port $SSH_PORT" >>/etc/ssh/sshd_config
 
+# #################################
+# disable power manager plugin xfce
+# #################################
+
+RUN rm /etc/xdg/autostart/xfce4-power-manager.desktop >/dev/null 2>&1
+RUN if [ -e /etc/xdg/xfce4/panel/default.xml ] ; \
+    then \
+        sed -i s/power/fail/ /etc/xdg/xfce4/panel/default.xml ; \
+    fi
+
 # #############################
 # install and configure x2go
 # x2go uses ssh
@@ -137,7 +148,7 @@ RUN if [ "xx2go" = "x${REMOTE_ACCESS}" ]  ; \
 RUN if [ "xrdp" = "x${REMOTE_ACCESS}" ] ; \
     then \
             apt -y install --no-install-recommends xorg xorgxrdp xrdp ; \
-            echo "rm /var/run/xrdp* >/dev/null 2>&1" >> /startkali.sh ; \
+            echo "rm -rf /var/run/xrdp >/dev/null 2>&1" >> /startkali.sh ; \
             echo "/etc/init.d/xrdp start" >> /startkali.sh ; \
             sed -i s/^port=3389/port=${RDP_PORT}/ /etc/xrdp/xrdp.ini ; \
             adduser xrdp ssl-cert ; \
