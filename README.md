@@ -64,7 +64,6 @@ You may also want to join [THE ONEMARCFIFTY DISCORD SERVER](https://discord.com/
 - RDP seems to only work with XFCE desktop
 - Other remote access protocols with various desktop environments also seem to be broken
 - XRDP breaks after reboot
-- Unicode characters aren't showing
 
 ## troubleshooting/tips
 - When using RDP and XFCE, the desktop will take a moment to load the first time (about five seconds or less)

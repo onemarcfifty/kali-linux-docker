@@ -79,6 +79,8 @@ ENV KALI_PKG=kali-linux-${KALI_PACKAGE}
 RUN apt update -q --fix-missing  
 RUN apt upgrade -y
 RUN apt -y install --no-install-recommends sudo wget curl dbus-x11 xinit openssh-server ${DESKTOP_PKG}
+RUN sed -i s/^#\ en_US.UTF-8\ UTF-8/en_US.UTF-8\ UTF-8/ /etc/locale.gen
+RUN locale-gen
 
 # #####################################################
 # create the start bash shell file
