@@ -1,5 +1,7 @@
 # kali-linux-docker
 
+![language](https://img.shields.io/github/languages/top/onemarcfifty/kali-linux-docker)    ![License](https://img.shields.io/github/license/onemarcfifty/kali-linux-docker)    ![Last Commit](https://img.shields.io/github/last-commit/onemarcfifty/kali-linux-docker)     ![FileCount](https://img.shields.io/github/directory-file-count/onemarcfifty/kali-linux-docker)    ![Stars](https://img.shields.io/github/stars/onemarcfifty/kali-linux-docker)    ![Forks](https://img.shields.io/github/forks/onemarcfifty/kali-linux-docker)
+
 A Docker solution for running a local, customizable full Kali Linux distribution.
 
 Configure the container with the following options:

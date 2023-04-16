@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # RDP port
 XRDP_PORT=13389
 
